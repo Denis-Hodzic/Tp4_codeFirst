@@ -31,7 +31,7 @@ namespace Tp4_codeFirst.Models.EntityFramework
         [StringLength(30)]
         public string Genre { get; set; }
 
-        [InverseProperty(nameof(Notation.NotesFilm))]
-        public virtual ICollection<Avi> Avis { get; set; } = new List<Avi>();
+        [InverseProperty(nameof(Notation.Note))]
+        public virtual ICollection<Notation> Notations { get; set; } = new List<Notation>();
     }
 }

@@ -12,7 +12,6 @@ namespace Tp4_codeFirst.Models.EntityFramework
     {
         [Key]
         [Column("flm_id")]
-        [ForeignKey(nameof(flm_id))]
         public int FilmId { get; set; }
 
         [Key]
@@ -22,11 +21,11 @@ namespace Tp4_codeFirst.Models.EntityFramework
         [Column("not_note")]
         public decimal Note { get; set; }
 
-        [ForeignKey(nameof(Idfilm))]
-        [InverseProperty(nameof(Film.Avis))]
-        public virtual Film IdfilmNavigation { get; set; } = null!;
+        [ForeignKey(nameof(FilmId))]
+        [InverseProperty(nameof(Film.Notations))]
+        public virtual Film FilmNote { get; set; } = null!;
 
-        [ForeignKey(nameof(Idutilisateur))]
+        [ForeignKey(nameof(UtilisateurId))]
         [InverseProperty(nameof(Utilisateur.Avis))]
         public virtual Utilisateur IdutilisateurNavigation { get; set; } = null!;
     }
