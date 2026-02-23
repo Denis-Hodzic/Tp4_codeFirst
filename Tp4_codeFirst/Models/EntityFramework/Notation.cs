@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Tp4_codeFirst.Models.EntityFramework
 {
     [PrimaryKey("FilmId", "UtilisateurId")]
-    [Table("avis")]
+    [Table("t_j_notation_not")]
     public partial class Notation
     {
         [Key]
