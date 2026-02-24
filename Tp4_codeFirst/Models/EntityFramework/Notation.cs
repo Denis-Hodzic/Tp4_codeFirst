@@ -26,7 +26,7 @@ namespace Tp4_codeFirst.Models.EntityFramework
         public virtual Film FilmNote { get; set; } = null!;
 
         [ForeignKey(nameof(UtilisateurId))]
-        [InverseProperty(nameof(Utilisateur.Avis))]
-        public virtual Utilisateur IdutilisateurNavigation { get; set; } = null!;
+        [InverseProperty(nameof(Utilisateur.NotesUtilisateur))]
+        public virtual Utilisateur UtilisateurNotant { get; set; } = null!;
     }
 }

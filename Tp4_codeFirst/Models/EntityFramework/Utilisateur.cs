@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Intrinsics.X86;
 
 namespace Tp4_codeFirst.Models.EntityFramework
@@ -22,20 +23,40 @@ namespace Tp4_codeFirst.Models.EntityFramework
         [StringLength(50)]
         public string? Prenom { get; set; }
 
-        [Column("utl_mobile"), TypeName = "char(10)")]
+        [Column("utl_mobile")]
+        [StringLength(50)]
         public string? Mobile { get; set; }
 
-        [Column("flm_datesortie")]
-        public DateTime DateSortie { get; set; }
+        [Column("utl_mail")]
+        [StringLength(100)]
+        public string? Mail { get; set; } = null!;
 
-        [Column("flm_duree")]
-        public decimal Duree { get; set; }
+        [Column("utl_pwd")]
+        [StringLength(64)]
+        public string Pwd { get; set; } = null!;
 
-        [Column("flm_genre")]
-        [StringLength(30)]
-        public string Genre { get; set; }
+        [Column("utl_cp")]
+        [StringLength(5)]
+        public string? CodePostal { get; set; }
+
+        [Column("utl_ville")]
+        [StringLength(50)]
+        public string? Ville { get; set; }
+
+        [Column("utl_pays")]
+        [StringLength(50)]
+        public string? Pays { get; set; }
+
+        [Column("utl_latitude")]
+        public float? Latitude { get; set; }
+
+        [Column("utl_longitude")]
+        public float? Longitude { get; set; }
+
+        [Column("utl_datecreation")]
+        public DateTime DateCreation { get; set; } 
 
         [InverseProperty(nameof(Notation.Note))]
-        public virtual ICollection<Notation> Notations { get; set; } = new List<Notation>();
+        public virtual ICollection<Notation> NotesUtilisateur { get; set; } = new List<Notation>();
     }
 }
