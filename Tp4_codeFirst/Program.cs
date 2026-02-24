@@ -1,6 +1,8 @@
 
 using Microsoft.EntityFrameworkCore;
+using Tp4_codeFirst.Models.DataManager;
 using Tp4_codeFirst.Models.EntityFramework;
+using Tp4_codeFirst.Models.Repository;
 
 namespace Tp4_codeFirst
 {
@@ -23,6 +25,8 @@ namespace Tp4_codeFirst
 
             builder.Services.AddControllers()
                             .AddJsonOptions(o => o.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
+
+            builder.Services.AddScoped<IDataRepository<Utilisateur>, UtilisateurManager>();
 
             var app = builder.Build();
 
