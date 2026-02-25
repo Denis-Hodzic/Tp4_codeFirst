@@ -1,103 +1,30 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
 using Tp4_codeFirst.Controllers;
 using Tp4_codeFirst.Models.EntityFramework;
-using System;
-using System.Linq;
-using Tp4_codeFirst.Models.DataManager;
 using Tp4_codeFirst.Models.Repository;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Tp4_codeFirst.Tests
 {
     [TestClass]
-    public class UtilisateursControllerTests
+    public class UtilisateursControllerMoqTests
     {
-        private readonly FilmRatingsDbContext context;
-        private readonly IDataRepository<Utilisateur> dataRepository;
-        private readonly UtilisateursController controller;
-
-        public UtilisateursControllerTests()
-        {
-            var options = new DbContextOptionsBuilder<FilmRatingsDbContext>()
-                .UseNpgsql("Host=localhost;Port=5432;Database=FilmRatings;Username=postgres;Password=Dragon10")
-                .Options;
-
-            context = new FilmRatingsDbContext(options);
-            dataRepository = new UtilisateurManager(context);
-            controller = new UtilisateursController(dataRepository);
-        }
-
+        // -------- POST --------
         [TestMethod]
-        public void GetAllUtilisateurs_OK()
+        public void PostUtilisateur_ModelValidated_CreationOK_AvecMoq()
         {
-            var attendu = context.Utilisateurs.ToList();
-
-            var actionResult = controller.GetUtilisateurs().Result;
-
-            var recu =
-                actionResult.Value
-                ?? (actionResult.Result as OkObjectResult)?.Value as System.Collections.Generic.IEnumerable<Utilisateur>;
-
-            Assert.IsNotNull(recu);
-            Assert.AreEqual(attendu.Count, recu.Count());
-        }
-
-        [TestMethod]
-        public void GetUtilisateurById_OK()
-        {
-            int id = context.Utilisateurs.Select(u => u.UtilisateurId).First();
-
-            var result = controller.GetUtilisateurById(id).Result;
-
-            Assert.IsNotNull(result.Value);
-            Assert.AreEqual(id, result.Value.UtilisateurId);
-        }
-
-        [TestMethod]
-        public void GetUtilisateurById_NotFound()
-        {
-            int id = -1;
-
-            var result = controller.GetUtilisateurById(id).Result;
-
-            Assert.IsInstanceOfType(result.Result, typeof(NotFoundResult));
-        }
-
-        [TestMethod]
-        public void GetUtilisateurByEmail_OK()
-        {
-            string mail = context.Utilisateurs.Select(u => u.Mail).First();
-
-            var result = controller.GetUtilisateurByEmail(mail).Result;
-
-            Assert.IsNotNull(result.Value);
-            Assert.AreEqual(mail.ToUpper(), result.Value.Mail.ToUpper());
-        }
-
-        [TestMethod]
-        public void GetUtilisateurByEmail_NotFound()
-        {
-            string mail = "inexistant_" + Guid.NewGuid() + "@gmail.com";
-
-            var result = controller.GetUtilisateurByEmail(mail).Result;
-
-            Assert.IsInstanceOfType(result.Result, typeof(NotFoundResult));
-        }
-
-        [TestMethod]
-        public void PostUtilisateur_ModelValidated_CreationOK()
-        {
-            var rnd = new Random();
-            int chiffre = rnd.Next(1, 1000000000);
+            // Arrange
+            var mockRepository = new Mock<IDataRepository<Utilisateur>>();
+            var controller = new UtilisateursController(mockRepository.Object);
 
             Utilisateur user = new Utilisateur
             {
-                Nom = "MACHIN",
-                Prenom = "Luc",
+                Nom = "POISSON",
+                Prenom = "Pascal",
                 Mobile = "0606070809",
-                Mail = "machin" + chiffre + "@gmail.com",
-                Pwd = "Toto1234!",
+                Mail = "poisson@gmail.com",
+                Pwd = "Toto12345678!",
                 Rue = "Chemin de Bellevue",
                 CodePostal = "74940",
                 Ville = "Annecy-le-Vieux",
@@ -106,59 +33,203 @@ namespace Tp4_codeFirst.Tests
                 Longitude = null
             };
 
-            _ = controller.PostUtilisateur(user).Result;
+            // Optionnel: vérifier que Add est bien appelé
+            mockRepository.Setup(r => r.Add(user));
 
-            var userRecupere = context.Utilisateurs
-                .FirstOrDefault(u => u.Mail.ToUpper() == user.Mail.ToUpper());
+            // Act
+            var actionResult = controller.PostUtilisateur(user).Result;
 
-            Assert.IsNotNull(userRecupere);
-            Assert.AreEqual(userRecupere.Mail.ToUpper(), user.Mail.ToUpper());
+            // Assert
+            Assert.IsNotNull(actionResult);
+            Assert.IsInstanceOfType(actionResult.Result, typeof(CreatedAtActionResult));
+
+            var created = actionResult.Result as CreatedAtActionResult;
+            Assert.IsNotNull(created);
+            Assert.IsInstanceOfType(created.Value, typeof(Utilisateur));
+
+            var returnedUser = created.Value as Utilisateur;
+            Assert.IsNotNull(returnedUser);
+
+            // Vérifie que l’appel à Add a été fait 1 fois
+            mockRepository.Verify(r => r.Add(It.IsAny<Utilisateur>()), Times.Once);
         }
 
+        // -------- GET BY ID (OK) --------
         [TestMethod]
-        public void PostUtilisateur_MailDuplique_Exception()
+        public void GetUtilisateurById_ExistingIdPassed_ReturnsRightItem_AvecMoq()
         {
-            string mailExistant = context.Utilisateurs.Select(u => u.Mail).First();
-
+            // Arrange
             Utilisateur user = new Utilisateur
             {
-                Nom = "DUPLIQUE",
-                Prenom = "Test",
-                Mobile = "0606070809",
-                Mail = mailExistant,
-                Pwd = "Toto1234!"
+                UtilisateurId = 1,
+                Nom = "Calida",
+                Prenom = "Lilley",
+                Mobile = "0653930778",
+                Mail = "clilleymd@last.fm",
+                Pwd = "Toto12345678!",
+                Rue = "Impasse des bergeronnettes",
+                CodePostal = "74200",
+                Ville = "Allinges",
+                Pays = "France",
+                Latitude = 46.344795F,
+                Longitude = 6.4885845F
             };
 
-            Assert.ThrowsException<AggregateException>(() =>
-            {
-                _ = controller.PostUtilisateur(user).Result;
-            });
+            var mockRepository = new Mock<IDataRepository<Utilisateur>>();
+            mockRepository.Setup(r => r.GetById(1)).Returns(user);
+
+            var controller = new UtilisateursController(mockRepository.Object);
+
+            // Act
+            var actionResult = controller.GetUtilisateurById(1).Result;
+
+            // Assert
+            Assert.IsNotNull(actionResult);
+            Assert.IsNotNull(actionResult.Value);
+            Assert.AreEqual(user, actionResult.Value);
         }
 
+        // -------- GET BY ID (NOT FOUND) --------
         [TestMethod]
-        public void DeleteUtilisateur_OK()
+        public void GetUtilisateurById_UnknownIdPassed_ReturnsNotFoundResult_AvecMoq()
         {
-            var rnd = new Random();
-            int chiffre = rnd.Next(1, 1000000000);
+            // Arrange
+            var mockRepository = new Mock<IDataRepository<Utilisateur>>();
+            mockRepository.Setup(r => r.GetById(It.IsAny<int>())).Returns((Utilisateur)null);
 
+            var controller = new UtilisateursController(mockRepository.Object);
+
+            // Act
+            var actionResult = controller.GetUtilisateurById(0).Result;
+
+            // Assert
+            Assert.IsInstanceOfType(actionResult.Result, typeof(NotFoundResult));
+        }
+
+        // -------- GET BY EMAIL (OK) --------
+        [TestMethod]
+        public void GetUtilisateurByEmail_ExistingEmailPassed_ReturnsRightItem_AvecMoq()
+        {
+            // Arrange
+            string email = "clilleymd@last.fm";
             Utilisateur user = new Utilisateur
             {
-                Nom = "A_SUPPRIMER",
-                Prenom = "Test",
-                Mobile = "0606070809",
-                Mail = "delete" + chiffre + "@gmail.com",
-                Pwd = "Toto1234!"
+                UtilisateurId = 1,
+                Nom = "Calida",
+                Prenom = "Lilley",
+                Mobile = "0653930778",
+                Mail = email,
+                Pwd = "Toto12345678!",
+                Rue = "Impasse des bergeronnettes",
+                CodePostal = "74200",
+                Ville = "Allinges",
+                Pays = "France",
+                Latitude = 46.344795F,
+                Longitude = 6.4885845F
             };
 
-            context.Utilisateurs.Add(user);
-            context.SaveChanges();
+            var mockRepository = new Mock<IDataRepository<Utilisateur>>();
+            mockRepository.Setup(r => r.GetByString(email)).Returns(user);
 
-            int id = user.UtilisateurId;
+            var controller = new UtilisateursController(mockRepository.Object);
 
-            _ = controller.DeleteUtilisateur(id).Result;
+            // Act
+            var actionResult = controller.GetUtilisateurByEmail(email).Result;
 
-            var userSupprime = context.Utilisateurs.FirstOrDefault(u => u.UtilisateurId == id);
-            Assert.IsNull(userSupprime);
+            // Assert
+            Assert.IsNotNull(actionResult.Value);
+            Assert.AreEqual(user, actionResult.Value);
+        }
+
+        // -------- GET BY EMAIL (NOT FOUND) --------
+        [TestMethod]
+        public void GetUtilisateurByEmail_UnknownEmailPassed_ReturnsNotFoundResult_AvecMoq()
+        {
+            // Arrange
+            var mockRepository = new Mock<IDataRepository<Utilisateur>>();
+            mockRepository.Setup(r => r.GetByString(It.IsAny<string>())).Returns((Utilisateur)null);
+
+            var controller = new UtilisateursController(mockRepository.Object);
+
+            // Act
+            var actionResult = controller.GetUtilisateurByEmail("inexistant@gmail.com").Result;
+
+            // Assert
+            Assert.IsInstanceOfType(actionResult.Result, typeof(NotFoundResult));
+        }
+
+        // -------- DELETE (OK) --------
+        [TestMethod]
+        public void DeleteUtilisateurTest_AvecMoq()
+        {
+            // Arrange
+            Utilisateur user = new Utilisateur
+            {
+                UtilisateurId = 1,
+                Nom = "Calida",
+                Prenom = "Lilley",
+                Mobile = "0653930778",
+                Mail = "clilleymd@last.fm",
+                Pwd = "Toto12345678!",
+                Rue = "Impasse des bergeronnettes",
+                CodePostal = "74200",
+                Ville = "Allinges",
+                Pays = "France",
+                Latitude = 46.344795F,
+                Longitude = 6.4885845F
+            };
+
+            var mockRepository = new Mock<IDataRepository<Utilisateur>>();
+            mockRepository.Setup(r => r.GetById(1)).Returns(user);
+
+            var controller = new UtilisateursController(mockRepository.Object);
+
+            // Act
+            var actionResult = controller.DeleteUtilisateur(1).Result;
+
+            // Assert
+            Assert.IsInstanceOfType(actionResult, typeof(NoContentResult));
+            mockRepository.Verify(r => r.Delete(It.IsAny<Utilisateur>()), Times.Once);
+        }
+
+        // -------- PUT (OK) --------
+        [TestMethod]
+        public void PutUtilisateur_ExistingIdPassed_ReturnsNoContent_AvecMoq()
+        {
+            // Arrange
+            int id = 1;
+
+            Utilisateur userEnBase = new Utilisateur
+            {
+                UtilisateurId = id,
+                Nom = "Calida",
+                Prenom = "Lilley",
+                Mobile = "0653930778",
+                Mail = "clilleymd@last.fm",
+                Pwd = "Toto12345678!"
+            };
+
+            Utilisateur userModifie = new Utilisateur
+            {
+                UtilisateurId = id,
+                Nom = "Calida_MODIF",
+                Prenom = "Lilley",
+                Mobile = "0600000000",
+                Mail = "clilleymd@last.fm",
+                Pwd = "Toto12345678!"
+            };
+
+            var mockRepository = new Mock<IDataRepository<Utilisateur>>();
+            mockRepository.Setup(r => r.GetById(id)).Returns(userEnBase);
+
+            var controller = new UtilisateursController(mockRepository.Object);
+
+            // Act
+            var actionResult = controller.PutUtilisateur(id, userModifie).Result;
+
+            // Assert
+            Assert.IsInstanceOfType(actionResult, typeof(NoContentResult));
+            mockRepository.Verify(r => r.Update(It.IsAny<Utilisateur>(), It.IsAny<Utilisateur>()), Times.Once);
         }
     }
 }
